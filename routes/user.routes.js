@@ -9,8 +9,8 @@ const userRoutes = express.Router()
 
 userRoutes.post("/register",async(req,res)=>{
     
-    const {email,password,name} = req.body
-    console.log(req.body)
+    const {email,password,name,avatar} = req.body
+
     try {
         const singleuser = await userModel.find({email})
         console.log(singleuser)
@@ -23,9 +23,10 @@ userRoutes.post("/register",async(req,res)=>{
                     res.status(404).send(err)
                 }
                 else{
-                    const newuser = new userModel({name,email,password:hashed})
+                    const newuser = new userModel({name,email,password:hashed,avatar})
                     await newuser.save()
-                    res.send({msg:"account created succesfully",data:newuser})
+                    const userdata = await userModel.find({email})
+                    res.send({msg:"account created succesfully",data:userdata})
                 }
           
             })
@@ -45,7 +46,7 @@ userRoutes.post("/login",async(req,res)=>{
                if(result){
                 jwt.sign({ userId: singleuser[0]._id }, "masai",(err, token)=> {
                      if(token){
-                        res.status(200).send({msg:"login succesfully",token:token})
+                        res.status(200).send({msg:"login succesfully",token:token,singledata:singleuser})
                      }
                      else{
                         res.status(404).send({msg:err,e:"error from jwt"})
@@ -57,21 +58,26 @@ userRoutes.post("/login",async(req,res)=>{
                }
             });
         }
+        else{
+            res.send({msg:"wrong credentials"})
+        }
 
     } catch (error) {
         res.status(404).send({msg:error.message})
     }
 })
+
 userRoutes.get("/",auth,async(req,res)=>{
-   const userid = req.body.userId
+    const id = req.body.userId
+    console.log(id)
     try {
-        const singleuser = await userModel.findById(userid)
+        const singleuser = await userModel.findById(id)
         console.log(singleuser)
         if(singleuser){
-            res.status(200).send({msg:"succesfull" ,data:singleuser})
+            res.send({msg:"succesfull",data:singleuser})
         }
         else{
-           res.status(200).send({msg:"error"})
+            res.send({msg:"please login again"})
         }
     } catch (error) {
         res.status(404).send({msg:error.message})
